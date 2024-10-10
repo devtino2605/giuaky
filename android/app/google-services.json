@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "883919660011",
+    "project_id": "film-91f87",
+    "storage_bucket": "film-91f87.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:883919660011:android:65dc5c296b669d71e3efae",
+        "android_client_info": {
+          "package_name": "com.example.flim"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuTP1QhN-SxJluJOAQWg6taCfvdsu1diI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
