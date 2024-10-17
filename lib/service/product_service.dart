@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProductService {
   Future<void> createOrUpdateProduct(
@@ -17,14 +18,28 @@ class ProductService {
           .doc(documentId)
           .get();
 
-      if (existingProduct.exists && imagePath == null) {
-        imageUrl = existingProduct['image'];
+      if (existingProduct.exists) {
+        String? existImageUrl = existingProduct['image'];
+
+        if (imagePath == null) {
+          imageUrl = existImageUrl!;
+        } else {
+          if (existImageUrl != null) {
+            try {
+              Reference imageRef =
+                  FirebaseStorage.instance.refFromURL(existImageUrl);
+              await imageRef.delete();
+            } catch (e) {
+              print("Lỗi khi xóa hình ảnh: $e");
+            }
+          }
+        }
       }
     }
 
     if (imagePath != null && !imagePath.startsWith('http')) {
       File imageFile = File(imagePath);
-      String fileName = imagePath.split("/").last;
+      String fileName = imagePath.split("/").last + DateTime.now().toString();
       Reference storageRef =
           FirebaseStorage.instance.ref().child('products/$fileName');
 
@@ -35,6 +50,12 @@ class ProductService {
       imageUrl = imagePath;
     }
 
+    User? user = FirebaseAuth.instance.currentUser;
+    String? email;
+    if (user != null) {
+      email = user.email!;
+    }
+
     if (documentId != null) {
       await FirebaseFirestore.instance
           .collection("Products")
@@ -43,10 +64,9 @@ class ProductService {
         'name': productName,
         'type': productType,
         'price': productPrice,
-        'image': imageUrl
+        'image': imageUrl,
       });
     } else {
-      // Thêm sản phẩm mới
       DocumentReference documentReference =
           FirebaseFirestore.instance.collection('Products').doc(productName);
 
@@ -54,7 +74,8 @@ class ProductService {
         'name': productName,
         'type': productType,
         'price': productPrice,
-        'image': imageUrl
+        'image': imageUrl,
+        'email': email,
       };
 
       await documentReference.set(products);
@@ -62,7 +83,6 @@ class ProductService {
   }
 
   Future<void> deleteProduct(String documentId) async {
-    // Lấy thông tin sản phẩm
     DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
         .collection("Products")
         .doc(documentId)
@@ -70,7 +90,6 @@ class ProductService {
     if (docSnapshot.exists) {
       var productData = docSnapshot.data() as Map<String, dynamic>;
 
-      // Nếu sản phẩm có hình ảnh, xóa hình ảnh từ Firebase Storage
       if (productData['image'] != null) {
         String imageUrl = productData['image'];
 
@@ -84,7 +103,6 @@ class ProductService {
       }
     }
 
-    // Xóa sản phẩm từ Firestore
     await FirebaseFirestore.instance
         .collection("Products")
         .doc(documentId)
